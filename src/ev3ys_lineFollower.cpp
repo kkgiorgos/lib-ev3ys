@@ -23,6 +23,7 @@ namespace ev3ys
         trj.setLimits(driveBase->getTachoSpeedLimit(), 6000);
         setSingleFollowMode("S", "50");
         sensorAmount = 1;
+        setErrorScaleFactor(1);
     }
 
     lineFollower::lineFollower(int loopFrequency, chassis *driveBase, colorSensor *leftSensor, colorSensor *rightSensor)
@@ -44,6 +45,7 @@ namespace ev3ys
         trj.setLimits(driveBase->getTachoSpeedLimit(), 6000);
         setDoubleFollowMode("SL", "SR");
         sensorAmount = 2;
+        setErrorScaleFactor(1);
     }
 
     void lineFollower::setAccelParams(double acceleration, double startSpeed, double endSpeed)
@@ -83,6 +85,11 @@ namespace ev3ys
         this->ki = ki;
         this->kd = kd;
         speedPIDnormalisation = speed;
+    }
+
+    void lineFollower::setErrorScaleFactor(double factor)
+    {
+        errorScaleFactor = factor;
     }
 
     void lineFollower::setDoubleFollowMode(const char *leftPos, const char *rightPos)
@@ -180,7 +187,7 @@ namespace ev3ys
             else if(followMode == followModes::RIGHT_SENSOR_RIGHT_POSITION)
                 error = target - rightVal;
         }
-        return error;
+        return error * errorScaleFactor;
     }
 
     void lineFollower::runPID(double speed)

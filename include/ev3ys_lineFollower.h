@@ -49,6 +49,7 @@ namespace ev3ys
         double loopPeriod;
         double kp, ki, kd;
         double speedPIDnormalisation;
+        double errorScaleFactor;
 
         double integral, lastError;
         double target;
@@ -69,6 +70,7 @@ namespace ev3ys
         void setSensorMode(sensorModes mode);
         void initializeMotionMode(speedMode mode);
         void setPIDparams(double kp, double ki, double kd, double speed);
+        void setErrorScaleFactor(double factor);
 
         void setDoubleFollowMode(const char *leftPos, const char *rightPos);
         void setSingleFollowMode(const char *leftPos, const char *rightPos);
