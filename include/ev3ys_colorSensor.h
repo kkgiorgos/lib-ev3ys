@@ -175,7 +175,8 @@ namespace ev3ys
         colorspaceRGB& getRGB()
         {	
             rgb_raw_t values = reflectedRawRgb();
-
+            tslp_tsk(1);
+            
             if (normalisedRGB)
             {
                 rgb.white = values.r + values.g + values.b;
