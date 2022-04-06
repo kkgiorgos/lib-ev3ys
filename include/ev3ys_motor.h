@@ -36,7 +36,8 @@ namespace ev3ys
     private:
         static const int maxMediumSpeed;
         static const int maxLargeSpeed;
-        static const int maxUnregSpeed;
+        static const int maxUnregSpeedPCT;
+        static const int maxUnregSpeedDPS;
         static const int speedLimit;
 
         int direction;
@@ -47,6 +48,7 @@ namespace ev3ys
         int speedToleranceDPS;
         int speedTolerancePCT;
         double stallTime;
+        bool unregulatedDPS;    //True: use DPS as unreg unit, False: use the usual PCT(%) units
 
         int tachoCountReset;
 
@@ -64,6 +66,7 @@ namespace ev3ys
         speedMode getMode();
         void setAccelParams(int acceleration, int startSpeed = 0, int endSpeed = 0);
         void setStallTolerance(int speedToleranceDPS, int speedTolerancePCT, double stallTime);
+        void setUnregulatedDPS(bool isDPS = true);
 
         int getSpeedLimit();
 

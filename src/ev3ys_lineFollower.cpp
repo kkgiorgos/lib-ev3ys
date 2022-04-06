@@ -1,4 +1,5 @@
 #include "ev3ys_lineFollower.h"
+#include "stdio.h"
 
 using namespace std;
 using namespace ev3cxx;
@@ -63,13 +64,17 @@ namespace ev3ys
     void lineFollower::initializeMotionMode(speedMode mode)
     {
         chassisMode = driveBase->getMode();
+        chassisUnregulatedDPS = driveBase->getUnregulatedDPS();
         this->motionMode = mode;
     }
 
     void lineFollower::setSpeedMode()
     {
         if(motionMode == speedMode::CONTROLLED)
-            driveBase->setMode(speedMode::REGULATED);
+        {
+            driveBase->setMode(speedMode::UNREGULATED);
+            driveBase->setUnregulatedDPS(true);
+        }
         else
             driveBase->setMode(motionMode);
     }
@@ -77,6 +82,7 @@ namespace ev3ys
     void lineFollower::resetChassisMode()
     {
         driveBase->setMode(chassisMode);
+        driveBase->setUnregulatedDPS(chassisUnregulatedDPS);
     }
 
     void lineFollower::setPIDparams(double kp, double ki, double kd, double speed)
@@ -215,6 +221,7 @@ namespace ev3ys
     void lineFollower::distance(double velocity, double distance, breakMode stopMode)
     {
         resetPID();
+        initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
         driveBase->resetPosition();
@@ -249,6 +256,7 @@ namespace ev3ys
     void lineFollower::seconds(double velocity, double seconds, breakMode stopMode)
     {
         resetPID();
+        initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
         driveBase->resetPosition();
@@ -312,6 +320,7 @@ namespace ev3ys
     void lineFollower::lines(double velocity, int lines, breakMode stopMode)
     {
         resetPID();
+        initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
         driveBase->resetPosition();

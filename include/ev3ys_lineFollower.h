@@ -39,6 +39,7 @@ namespace ev3ys
         ev3cxx::Bluetooth bt;
 
         speedMode chassisMode;
+        bool chassisUnregulatedDPS;
         sensorModes sensorMode;
         int sensorAmount;
         speedMode motionMode;

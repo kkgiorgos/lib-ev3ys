@@ -40,6 +40,7 @@ namespace ev3ys
         headingController.setPID(66, 40, 2.5, 0.001);
 
         setStallTolerance(10, 200, 6, 40, 0.5);
+        unregulatedDPS = false;
     }
 
     void chassis::setMode(speedMode mode)
@@ -54,6 +55,11 @@ namespace ev3ys
         {
             leftMotor->setMode(mode);
             rightMotor->setMode(mode);
+            if(mode == UNREGULATED)
+            {
+                leftMotor->setUnregulatedDPS(unregulatedDPS);
+                rightMotor->setUnregulatedDPS(unregulatedDPS);
+            }
         }
     }
 
@@ -88,6 +94,13 @@ namespace ev3ys
         this->speedToleranceDPS = speedToleranceDPS;
         this->speedToleranceLinear = speedToleranceLinear;
         this->speedToleranceAngular = speedToleranceAngular;
+    }
+
+    void chassis::setUnregulatedDPS(bool isDPS)
+    {
+        unregulatedDPS = isDPS;
+        leftMotor->setUnregulatedDPS(isDPS);
+        rightMotor->setUnregulatedDPS(isDPS);
     }
 
     double chassis::tachoToCm(double tacho)
@@ -145,6 +158,16 @@ namespace ev3ys
         int rightTacho = rightMotor->getTachoCount();
 
         return calculateAngular(leftTacho, rightTacho);
+    }
+
+    double chassis::getKp()
+    {
+        return KpRegular;
+    }
+
+    bool chassis::getUnregulatedDPS()
+    {
+        return unregulatedDPS;
     }
 
     void chassis::resetPosition()

@@ -48,6 +48,7 @@ namespace ev3ys
         int speedToleranceDPS;
         double speedToleranceLinear;
         double speedToleranceAngular;
+        double unregulatedDPS;
 
         double wheelCircumference;
         double chassisRadius;
@@ -78,12 +79,16 @@ namespace ev3ys
         void setLinearAccelParams(double acceleration, double startSpeed, double endSpeed);
         void setAngularAccelParams(double acceleration, double startSpeed, double endSpeed);
         void setStallTolerance(int speedTolerancePCT, int speedToleranceDPS, double speedToleranceLinear, double speedToleranceAngular, double stallTime);
+        void setUnregulatedDPS(bool isDPS = true);
+
 
         double cmToTacho(double cm);
         double getLinearVelocity();
         double getAngularVelocity();
         double getPosition();
         double getAngle();
+        double getKp();
+        bool getUnregulatedDPS();
         void resetPosition();
 
         void stop(breakMode stopMode = breakMode::COAST);

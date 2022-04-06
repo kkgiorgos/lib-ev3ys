@@ -7,12 +7,14 @@ namespace ev3ys
 {
     const int motor::maxMediumSpeed = 1815;
     const int motor::maxLargeSpeed = 1165;
-    const int motor::maxUnregSpeed = 100;
+    const int motor::maxUnregSpeedPCT = 100;
+    const int motor::maxUnregSpeedDPS = 1150;
     const int motor::speedLimit = 1150;
 
     motor::motor(MotorPort port, bool inversed, MotorType type) : Motor(port, type)
     {
         direction = inversed ? -1 : 1;
+        unregulatedDPS = false;
         if(type == MotorType::MEDIUM)
         {
             this->type = motorType::MEDIUM;
@@ -36,7 +38,13 @@ namespace ev3ys
     void motor::setMode(speedMode mode)
     {
         this->mode = mode;
-        if(mode == UNREGULATED) maxSpeed = maxUnregSpeed;
+        if(mode == UNREGULATED) 
+        {
+            if(unregulatedDPS)
+                maxSpeed = maxUnregSpeedDPS;
+            else
+                maxSpeed = maxUnregSpeedPCT;
+        }
 
         else if(type == motorType::LARGE) maxSpeed = maxLargeSpeed;
         else maxSpeed = maxMediumSpeed;
@@ -59,6 +67,12 @@ namespace ev3ys
         this->speedToleranceDPS = speedToleranceDPS;
         this->speedTolerancePCT = speedTolerancePCT;
         this->stallTime = stallTime;
+    }
+
+    void motor::setUnregulatedDPS(bool isDPS)
+    {
+        unregulatedDPS = isDPS;
+        setMode(UNREGULATED);
     }
 
     int motor::getSpeedLimit()
@@ -155,6 +169,7 @@ namespace ev3ys
 
         if(mode == speedMode::UNREGULATED)
         {
+            speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             unregulated(speed);
         }
         else if(mode == speedMode::REGULATED)
@@ -189,6 +204,7 @@ namespace ev3ys
 
         if(mode == speedMode::UNREGULATED)
         {
+            speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             while(abs(getTachoCount()) < degrees)
             {
                 unregulated(speed);
@@ -232,6 +248,7 @@ namespace ev3ys
 
         if(mode == speedMode::UNREGULATED)
         {
+            speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             while(t.secElapsed() < seconds)
             {
                 unregulated(speed);
@@ -269,6 +286,7 @@ namespace ev3ys
 
         if(mode == speedMode::UNREGULATED)
         {
+            speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             t.reset();
             unregulated(speed);
             while(t.secElapsed() < maxTimeLimit)
