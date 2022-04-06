@@ -60,6 +60,7 @@ namespace ev3ys
         colorspaceHSV hsv;
         colors col;
         ev3cxx::Bluetooth bt;
+        ev3ys::timer t;
 
         int lastSample;
         int filterValue;
@@ -175,7 +176,7 @@ namespace ev3ys
         colorspaceRGB& getRGB()
         {	
             rgb_raw_t values = reflectedRawRgb();
-            tslp_tsk(1);
+            t.secDelay(0.001);
             
             if (normalisedRGB)
             {
