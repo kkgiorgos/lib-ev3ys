@@ -103,6 +103,7 @@ namespace ev3ys
 
         void setNormalisation(bool normalised, int colorsAmount = 5)
         {
+            if(normalisedRGB == normalised) return;
             normalisedRef = normalised;
             normalisedRGB = normalised;
             if (normalised)
@@ -269,10 +270,10 @@ namespace ev3ys
             }
             else
             {
-                for(int i = 0; i < colorData.hues.size(); i++)
+                for(auto colorProt: colorData.hues)
                 {
-                    if(checkRange(hsv.hue, colorData.hues[i].hue, colorData.hues[i].zoneSize))
-                        col = colorData.hues[i].color;
+                    if(checkRange(hsv.hue, colorProt.hue, colorProt.zoneSize))
+                        col = colorProt.color;
                 }
             }
 
