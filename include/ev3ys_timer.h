@@ -17,6 +17,6 @@ namespace ev3ys
         void reset();			//Reset timer (Set new Starting time point for Elapsed function)
         double secElapsed();	//Measures time difference between now and starting time point
 
-        void secDelay(double seconds);	//Runs a while loop for inputed seconds using the same method as secElapsed()
+        static void secDelay(double seconds);	//Runs a while loop for inputed seconds using the same method as secElapsed()
     };
 }
