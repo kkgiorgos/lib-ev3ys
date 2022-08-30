@@ -23,7 +23,8 @@ namespace ev3ys
         RIGHT_SENSOR_LEFT_POSITION,
         RIGHT_SENSOR_RIGHT_POSITION,
         ONE_SENSOR_LEFT_POSITION,
-        ONE_SENSOR_RIGHT_POSITION
+        ONE_SENSOR_RIGHT_POSITION,
+        NO_SENSORS
     };
 
     class lineFollower
@@ -44,6 +45,7 @@ namespace ev3ys
         int sensorAmount;
         speedMode motionMode;
         followModes followMode;
+        bool alignMode;
 
         double acceleration, startSpeed, endSpeed;
 
@@ -72,6 +74,7 @@ namespace ev3ys
         void initializeMotionMode(speedMode mode);
         void setPIDparams(double kp, double ki, double kd, double speed);
         void setErrorScaleFactor(double factor);
+        void setAlignMode(bool enable = true);
 
         void setDoubleFollowMode(const char *leftPos, const char *rightPos);
         void setSingleFollowMode(const char *leftPos, const char *rightPos);

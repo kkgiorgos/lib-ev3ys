@@ -25,6 +25,7 @@ namespace ev3ys
         setSingleFollowMode("S", "50");
         sensorAmount = 1;
         setErrorScaleFactor(1);
+        setAlignMode(false);
     }
 
     lineFollower::lineFollower(int loopFrequency, chassis *driveBase, colorSensor *leftSensor, colorSensor *rightSensor)
@@ -47,6 +48,7 @@ namespace ev3ys
         setDoubleFollowMode("SL", "SR");
         sensorAmount = 2;
         setErrorScaleFactor(1);
+        setAlignMode(false);
     }
 
     void lineFollower::setAccelParams(double acceleration, double startSpeed, double endSpeed)
@@ -119,6 +121,8 @@ namespace ev3ys
                 followMode = RIGHT_SENSOR_RIGHT_POSITION;
             target = atoi(leftPos);
         }
+        else
+            followMode = NO_SENSORS;
     }
 
     void lineFollower::setSingleFollowMode(const char *leftPos, const char *rightPos)
@@ -133,6 +137,13 @@ namespace ev3ys
             followMode = ONE_SENSOR_RIGHT_POSITION;
             target = atoi(leftPos);
         }
+        else
+            followMode = NO_SENSORS;
+    }
+    
+    void lineFollower::setAlignMode(bool enable)
+    {
+        alignMode = enable;
     }
 
     void lineFollower::resetPID()
@@ -147,6 +158,8 @@ namespace ev3ys
     {
         double error = 0;
         double leftVal, rightVal;
+        if(followMode == NO_SENSORS)
+            return  0;
         if(sensorAmount == 1)
         {
             double sensorVal;
@@ -203,7 +216,7 @@ namespace ev3ys
         double derivative = error - lastError;
         lastError = error;
 
-        double result = (kp * error + ki * integral + kd * derivative) * (speed / speedPIDnormalisation); 
+        double result = (kp * error + ki * integral + kd * derivative) * (alignMode ? 1 : (speed / speedPIDnormalisation)); 
 
         double speedLeft = speed + result;
         double speedRight = speed - result;
