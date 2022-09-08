@@ -259,24 +259,48 @@ namespace ev3ys
 
         colors& getColor()
         {
-            hsv = getHSV();
+            // hsv = getHSV();
 
-            if(hsv.saturation < colorData.minColorSaturation)
-            {
-                if(hsv.value > colorData.greyscaleIntersection)
-                    col = colors::WHITE;
-                else
-                    col = colors::BLACK;
-            }
-            else
-            {
-                for(auto colorProt: colorData.hues)
-                {
-                    if(checkRange(hsv.hue, colorProt.hue, colorProt.zoneSize))
-                        col = colorProt.color;
-                }
-            }
+            // if(hsv.saturation < colorData.minColorSaturation)
+            // {
+            //     if(hsv.value > colorData.greyscaleIntersection)
+            //         col = colors::WHITE;
+            //     else
+            //         col = colors::BLACK;
+            // }
+            // else
+            // {
+            //     for(auto colorProt: colorData.hues)
+            //     {
+            //         if(checkRange(hsv.hue, colorProt.hue, colorProt.zoneSize))
+            //             col = colorProt.color;
+            //     }
+            // }
 
+            switch(color())
+            {
+                case COLOR_RED:
+                    col = RED;
+                    break;
+                case COLOR_BLUE:
+                    col = BLUE;
+                    break;
+                case COLOR_GREEN:
+                    col = GREEN;
+                    break;
+                case COLOR_YELLOW:
+                    col = YELLOW;
+                    break;
+                case COLOR_BLACK:
+                    col = BLACK;
+                    break;
+                case COLOR_WHITE:
+                case COLOR_BROWN:
+                case COLOR_NONE:
+                    col = WHITE;
+                    break;
+            }
+            
             return col;
         }
 

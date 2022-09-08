@@ -74,8 +74,9 @@ namespace ev3ys
     {
         if(motionMode == speedMode::CONTROLLED)
         {
-            driveBase->setMode(speedMode::UNREGULATED);
-            driveBase->setUnregulatedDPS(true);
+            //driveBase->setMode(speedMode::UNREGULATED);
+            //driveBase->setUnregulatedDPS(true);
+            driveBase->setMode(REGULATED);
         }
         else
             driveBase->setMode(motionMode);
