@@ -32,6 +32,7 @@ namespace ev3ys
         setMode(speedMode::REGULATED);
         setAccelParams(1000);
         setStallTolerance(200, 10, 0.5);
+        setSpeedLimiter(true);
         tachoCountReset = 0;
     }
 
@@ -75,6 +76,11 @@ namespace ev3ys
         setMode(UNREGULATED);
     }
 
+    void motor::setSpeedLimiter(bool doLimit)
+    {
+        limitSpeed = doLimit;
+    }
+
     int motor::getSpeedLimit()
     {
         return speedLimit;
@@ -82,7 +88,7 @@ namespace ev3ys
 
     int motor::trimSpeed(int speed)
     {
-        return clamp(speed, -speedLimit, speedLimit);
+        return limitSpeed ? clamp(speed, -speedLimit, speedLimit) : speed;
     }
 
     int motor::dps_to_pct(int speed)
@@ -275,6 +281,31 @@ namespace ev3ys
         stop(stopMode);
     }
 
+    bool motor::isStalled(int speed)
+    {
+        if(mode == speedMode::REGULATED)
+        {
+            speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
+            if(abs(abs(speed) - abs(getCurrentSpeed())) > speedTolerancePCT)
+            {
+                if(stallTimerStarted)
+                {
+                    if(t.secElapsed() > stallTime)
+                    {
+                        stallTimerStarted = false;
+                        return true;
+                    }
+                }
+                else
+                {
+                    stallTimerStarted = true;
+                    t.reset();
+                }
+            }
+        }
+        return false;
+    }
+
     void motor::moveUntilStalled(int speed, breakMode stopMode, double maxTimeLimit, bool resetTacho)
     {
         setMode(mode);
@@ -291,10 +322,10 @@ namespace ev3ys
             unregulated(speed);
             while(t.secElapsed() < maxTimeLimit)
             {
-                if(abs(abs(speed) - getCurrentSpeed()) > speedTolerancePCT)
+                if(abs(abs(speed) - abs(getCurrentSpeed())) > speedTolerancePCT)
                 {
                     t.secDelay(stallTime);
-                    if(abs(abs(speed) - getCurrentSpeed()) > speedTolerancePCT)break;
+                    if(abs(abs(speed) - abs(getCurrentSpeed())) > speedTolerancePCT)break;
                 }
             }
         }
@@ -304,10 +335,10 @@ namespace ev3ys
             on(dps_to_pct(trimSpeed(speed)));
             while(t.secElapsed() < maxTimeLimit)
             {
-                if(abs(abs(speed) - getCurrentSpeed()) > speedToleranceDPS)
+                if(abs(abs(speed) - abs(getCurrentSpeed())) > speedToleranceDPS)
                 {
                     t.secDelay(stallTime);
-                    if(abs(abs(speed) - getCurrentSpeed()) > speedToleranceDPS)break;
+                    if(abs(abs(speed) - abs(getCurrentSpeed())) > speedToleranceDPS)break;
                 }
             }
         }
@@ -319,14 +350,14 @@ namespace ev3ys
             moveUnlimited(speed, true);
             while(t.secElapsed() < maxTimeLimit)
             {
-                if(abs(abs(speed) - getCurrentSpeed()) > speedToleranceDPS)
+                if(abs(abs(speed) - abs(getCurrentSpeed())) > speedToleranceDPS)
                 {
                     stallTimer.reset();
                     while(stallTimer.secElapsed() < stallTime)
                     {
                         moveUnlimited(speed);
                     }
-                    if(abs(abs(speed) - getCurrentSpeed()) > speedToleranceDPS)break;
+                    if(abs(abs(speed) - abs(getCurrentSpeed())) > speedToleranceDPS)break;
                 }
                 moveUnlimited(speed);
             }

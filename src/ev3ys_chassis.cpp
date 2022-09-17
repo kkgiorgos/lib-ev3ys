@@ -242,6 +242,14 @@ namespace ev3ys
         tslp_tsk(1);
     }
 
+    void chassis::actuateKinematically(double linearVelocity, double angularVelocity)
+    {
+        double distanceVelocity = cmToTacho(linearVelocity);
+        double headingVelocity = angularToTacho(angularVelocity);
+        leftMotor->moveUnlimited(distanceVelocity + headingVelocity);
+        rightMotor->moveUnlimited(distanceVelocity - headingVelocity);
+    }
+
     double chassis::calculateArcWheelDistances(double center, double angle, wheels wheel)
     {
         return abs(2 * MATH_PI * angle * ((chassisRadius * wheel) - center) / wheelCircumference);
@@ -364,23 +372,25 @@ namespace ev3ys
 
         if(mode == speedMode::CONTROLLED)
         {
-            trj.makePositionBased(velocity, tachoToCm(max(abs(leftDistance), abs(rightDistance))), linearAcceleration, startLinearVelocity, endLinearVelocity);
-            double empty;
+            // trj.makePositionBased(velocity, tachoToCm(max(abs(leftDistance), abs(rightDistance))), linearAcceleration, startLinearVelocity, endLinearVelocity);
+            // double empty;
             Kp = KpArc;
+            velocity = cmToTacho(velocity);
+            wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
             while(abs(getAngle()) < angle)
             {
-                trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                if(velocity == 0) break;
-                velocity = cmToTacho(velocity);
-                wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
+                // trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
+                // if(velocity == 0) break;
+                
                 actuateControlled(wheelSpeeds.left, wheelSpeeds.right);
             }
         }
         else
         {
-            wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
+            wheelSpeeds = calculateArcSpeeds(cmToTacho(velocity), leftDistance, rightDistance, arcCenter, angle);
 
-            while((abs(leftMotor->getTachoCount()) + abs(rightMotor->getTachoCount())) / 2 < (leftDistance + rightDistance) / 2)
+            // while((abs(leftMotor->getTachoCount()) + abs(rightMotor->getTachoCount())) / 2 < (leftDistance + rightDistance) / 2)
+            while(abs(getAngle()) < angle)
             {
                 actuateMotors(wheelSpeeds.left, wheelSpeeds.right);
             }
@@ -561,14 +571,14 @@ namespace ev3ys
         double empty;
         if(mode == speedMode::CONTROLLED)
         {
-            trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
+            // trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
             velocity = cmToTacho(velocity);
             wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
             actuateControlled(wheelSpeeds.left, wheelSpeeds.right);
         }
         else
         {
-            wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
+            wheelSpeeds = calculateArcSpeeds(cmToTacho(velocity), leftDistance, rightDistance, arcCenter, angle);
             actuateMotors(wheelSpeeds.left, wheelSpeeds.right);
         }
     }

@@ -49,6 +49,8 @@ namespace ev3ys
         int speedTolerancePCT;
         double stallTime;
         bool unregulatedDPS;    //True: use DPS as unreg unit, False: use the usual PCT(%) units
+        bool limitSpeed;
+        bool stallTimerStarted;
 
         int tachoCountReset;
 
@@ -67,6 +69,7 @@ namespace ev3ys
         void setAccelParams(int acceleration, int startSpeed = 0, int endSpeed = 0);
         void setStallTolerance(int speedToleranceDPS, int speedTolerancePCT, double stallTime);
         void setUnregulatedDPS(bool isDPS = true);
+        void setSpeedLimiter(bool doLimit);
 
         int getSpeedLimit();
 
@@ -78,6 +81,8 @@ namespace ev3ys
         int getAbsoluteTachoCount();
         void resetTachoCount();
         void initialiseAbsoluteCount();
+
+        bool isStalled(int speed);
 
         void stop(breakMode stopMode = breakMode::COAST);
         void moveUnlimited(int speed, bool resetTacho = false);

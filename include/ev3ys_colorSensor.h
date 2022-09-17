@@ -19,10 +19,10 @@ namespace ev3ys
     };
 
     struct colorspaceRGB{
-        float red;
-        float green;
-        float blue;
-        float white;
+        double red;
+        double green;
+        double blue;
+        double white;
     };
 
     struct colorspaceHSV{
@@ -232,9 +232,9 @@ namespace ev3ys
 
             double minV, maxV, delta;
             minV = std::min(rgb.red, rgb.green);
-            minV = std::min((float)minV, rgb.blue);
+            minV = std::min(minV, rgb.blue);
             maxV = std::max(rgb.red, rgb.green);
-            maxV = std::max((float)maxV, rgb.blue);
+            maxV = std::max(maxV, rgb.blue);
             hsv.value = maxV * 100;
             delta = maxV - minV;
             if (maxV != 0)

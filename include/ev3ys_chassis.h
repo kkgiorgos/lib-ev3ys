@@ -63,7 +63,6 @@ namespace ev3ys
         double calculateLinear(double leftTacho, double rightTacho);
         double calculateAngular(double leftTacho, double rightTacho);
 
-        double calculateArcWheelDistances(double center, double angle, wheels wheel);
         speeds calculateArcSpeeds(double velocity, double leftDistance, double rightDistance, double center, double angle);
 
         void actuateMotors(double leftSpeed, double rightSpeed);
@@ -92,6 +91,10 @@ namespace ev3ys
         void resetPosition();
 
         void stop(breakMode stopMode = breakMode::COAST);
+
+        void actuateKinematically(double linearVelocity, double angularVelocity);
+        double calculateArcWheelDistances(double center, double angle, wheels wheel);
+
 
         //Straight and Turn only controlled tank only unregulated/regulated Arc is for everything
 
