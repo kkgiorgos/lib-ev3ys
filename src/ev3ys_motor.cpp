@@ -34,7 +34,7 @@ namespace ev3ys
         setStallTolerance(200, 10, 0.5);
         setSpeedLimiter(true);
         tachoCountReset = 0;
-        batteryFactor = 7800.0 / ev3_battery_voltage_mV();
+        batteryFactor = 7700.0 / ev3_battery_voltage_mV();
     }
 
     void motor::setMode(speedMode mode)
