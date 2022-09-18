@@ -56,6 +56,8 @@ namespace ev3ys
 
         double acceleration, startSpeed, endSpeed;
 
+        double batteryFactor;
+
         control motorController;
         timer t;
 

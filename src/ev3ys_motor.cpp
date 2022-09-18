@@ -34,6 +34,7 @@ namespace ev3ys
         setStallTolerance(200, 10, 0.5);
         setSpeedLimiter(true);
         tachoCountReset = 0;
+        batteryFactor = 7800.0 / ev3_battery_voltage_mV();
     }
 
     void motor::setMode(speedMode mode)
@@ -176,7 +177,7 @@ namespace ev3ys
         if(mode == speedMode::UNREGULATED)
         {
             speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
-            unregulated(speed);
+            unregulated(speed * batteryFactor);
         }
         else if(mode == speedMode::REGULATED)
         {
@@ -213,7 +214,7 @@ namespace ev3ys
             speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             while(abs(getTachoCount()) < degrees)
             {
-                unregulated(speed);
+                unregulated(speed * batteryFactor);
             }
         }
         else if(mode == speedMode::REGULATED)
@@ -257,7 +258,7 @@ namespace ev3ys
             speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             while(t.secElapsed() < seconds)
             {
-                unregulated(speed);
+                unregulated(speed * batteryFactor);
             }
         }
         else if(mode == speedMode::REGULATED)
@@ -319,7 +320,7 @@ namespace ev3ys
         {
             speed = (unregulatedDPS) ? dps_to_pct(speed) : speed;
             t.reset();
-            unregulated(speed);
+            unregulated(speed * batteryFactor);
             while(t.secElapsed() < maxTimeLimit)
             {
                 if(abs(abs(speed) - abs(getCurrentSpeed())) > speedTolerancePCT)
