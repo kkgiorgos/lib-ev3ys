@@ -165,3 +165,17 @@ double control::update(double timeNow, double positionNow, double velocityNow)
 
     return result;
 }
+
+double control::updateManual(double timeNow, double positionNow, double velocityNow, double positionTarget, double velocityTarget)
+{
+    double result;
+
+    //Computation of the control signal
+    error = positionTarget - positionNow;
+    error_d = velocityTarget - velocityNow;
+    result = error * pidKp + error_d * pidKd;
+
+    result = clamp(result, -maxVelocity, maxVelocity);
+
+    return result;
+}

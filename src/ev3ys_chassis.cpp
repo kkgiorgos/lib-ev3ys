@@ -372,16 +372,16 @@ namespace ev3ys
 
         if(mode == speedMode::CONTROLLED)
         {
-            // trj.makePositionBased(velocity, tachoToCm(max(abs(leftDistance), abs(rightDistance))), linearAcceleration, startLinearVelocity, endLinearVelocity);
-            // double empty;
+            trj.makePositionBased(velocity, tachoToCm(max(abs(leftDistance), abs(rightDistance))), linearAcceleration, startLinearVelocity, endLinearVelocity);
+            double empty;
             Kp = KpArc;
-            velocity = cmToTacho(velocity);
-            wheelSpeeds = calculateArcSpeeds(velocity, leftDistance, rightDistance, arcCenter, angle);
+            // velocity = cmToTacho(velocity);
             while(abs(getAngle()) < angle)
             {
-                // trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                // if(velocity == 0) break;
-                
+                trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
+                if(velocity == 0) break;
+
+                wheelSpeeds = calculateArcSpeeds(cmToTacho(velocity), leftDistance, rightDistance, arcCenter, angle);           
                 actuateControlled(wheelSpeeds.left, wheelSpeeds.right);
             }
         }

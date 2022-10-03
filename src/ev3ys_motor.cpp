@@ -230,7 +230,7 @@ namespace ev3ys
             while(!motorController.isDone())
             {
                 speed = direction * motorController.update(t.secElapsed(), getTachoCount(), getCurrentSpeed());
-                on(speed);
+                unregulated(dps_to_pct(speed));
             }
             motorController.stop();
         }

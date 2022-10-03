@@ -177,7 +177,8 @@ namespace ev3ys
         colorspaceRGB& getRGB()
         {	
             rgb_raw_t values = reflectedRawRgb();
-            t.secDelay(0.001);
+            //t.secDelay(0.001);
+            tslp_tsk(10);
             
             if (normalisedRGB)
             {

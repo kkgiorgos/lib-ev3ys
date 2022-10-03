@@ -61,5 +61,7 @@ namespace ev3ys
         bool isDone();
 
         double update(double timeNow, double positionNow, double velocityNow);
+
+        double updateManual(double timeNow, double positionNow, double velocityNow, double positionTarget, double velocityTarget);
     };
 }

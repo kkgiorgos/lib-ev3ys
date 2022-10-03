@@ -67,7 +67,6 @@ namespace ev3ys
 
         void actuateMotors(double leftSpeed, double rightSpeed);
         bool actuateControlledExternal(double time);
-        void actuateControlled(double leftSpeed, double rightSpeed);
 
     public:
         chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc);
@@ -93,6 +92,7 @@ namespace ev3ys
         void stop(breakMode stopMode = breakMode::COAST);
 
         void actuateKinematically(double linearVelocity, double angularVelocity);
+        void actuateControlled(double leftSpeed, double rightSpeed);
         double calculateArcWheelDistances(double center, double angle, wheels wheel);
 
 
