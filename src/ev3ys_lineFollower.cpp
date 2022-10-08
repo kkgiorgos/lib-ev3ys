@@ -331,7 +331,7 @@ namespace ev3ys
         resetChassisMode();
     }
 
-    void lineFollower::lines(double velocity, int lines, breakMode stopMode)
+    void lineFollower::lines(double velocity, int lines, breakMode stopMode, double lineSkipDistance, bool addFinalLineSkip)
     {
         resetPID();
         initializeMotionMode(motionMode);
@@ -345,15 +345,23 @@ namespace ev3ys
             double empty;
             for(int i = 0; i < lines - 1; i++)
             {
+                leftSensor->resetFiltering();
+                rightSensor->resetFiltering();
                 while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
                 {
                     periodTimer.reset();
                     trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                     velocity = driveBase->cmToTacho(velocity);
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                    {
+                        calculateError();
+                    }
                 }
-                while(leftSensor->getLineDetected() || rightSensor->getLineDetected())
+                driveBase->resetPosition();
+                followModes prevMode = followMode;
+                followMode = NO_SENSORS;
+                while(driveBase->getPosition() < lineSkipDistance)
                 {
                     periodTimer.reset();
                     trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
@@ -361,38 +369,86 @@ namespace ev3ys
                     runPID(velocity);
                     periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
                 }
+                followMode = prevMode;
             }
+            leftSensor->resetFiltering();
+            rightSensor->resetFiltering();
             while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
             {
                 periodTimer.reset();
                 trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                 velocity = driveBase->cmToTacho(velocity);
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                {
+                    calculateError();
+                }
+            }
+            if(addFinalLineSkip)
+            {
+                driveBase->resetPosition();
+                followModes prevMode = followMode;
+                followMode = NO_SENSORS;
+                while(driveBase->getPosition() < lineSkipDistance)
+                {
+                    periodTimer.reset();
+                    trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
+                    velocity = driveBase->cmToTacho(velocity);
+                    runPID(velocity);
+                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                }
+                followMode = prevMode;
             }
         }
         else
         {
             for(int i = 0; i < lines - 1; i++)
             {
+                leftSensor->resetFiltering();
+                rightSensor->resetFiltering();
                 while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
                 {
                     periodTimer.reset();
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                    {
+                        calculateError();
+                    }
                 }
-                while(leftSensor->getLineDetected() || rightSensor->getLineDetected())
+                driveBase->resetPosition();
+                followModes prevMode = followMode;
+                followMode = NO_SENSORS;
+                while(driveBase->getPosition() < lineSkipDistance)
                 {
                     periodTimer.reset();
                     runPID(velocity);
                     periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
                 }
+                followMode = prevMode;
             }
+            leftSensor->resetFiltering();
+            rightSensor->resetFiltering();
             while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
             {
                 periodTimer.reset();
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                {
+                    calculateError();
+                }
+            }
+            if(addFinalLineSkip)
+            {
+                driveBase->resetPosition();
+                followModes prevMode = followMode;
+                followMode = NO_SENSORS;
+                while(driveBase->getPosition() < lineSkipDistance)
+                {
+                    periodTimer.reset();
+                    runPID(velocity);
+                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                }
+                followMode = prevMode;
             }
         }
         resetChassisMode();

@@ -5,7 +5,7 @@ using namespace ev3cxx;
 
 namespace ev3ys
 {
-    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc)
+    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc, double Kd)
     {
         bt.open();
         wheelCircumference = wheelDiameter * MATH_PI;
@@ -17,6 +17,8 @@ namespace ev3ys
         this->Kp = KpRegular;
         this->KpRegular = KpRegular;
         this->KpArc = KpArc;
+        this->Kd = Kd;
+        lastError = 0;
 
         setMode(speedMode::CONTROLLED);
         this->leftMotor->setMode(speedMode::REGULATED);
@@ -234,11 +236,12 @@ namespace ev3ys
     {
         double error, result, leftResult, rightResult;
         error = rightSpeed * leftMotor->getTachoCount() - leftSpeed * rightMotor->getTachoCount();
-        result = error * Kp;
+        result = error * Kp + (error - lastError) * Kd;
         leftResult = leftSpeed - sign(rightSpeed) * result;
         rightResult = rightSpeed + sign(leftSpeed) * result;
         leftMotor->moveUnlimited(leftResult);
         rightMotor->moveUnlimited(rightResult);
+        lastError = error;
         tslp_tsk(1);
     }
 
@@ -323,6 +326,7 @@ namespace ev3ys
 
         double empty;
         Kp = KpRegular;
+        lastError = 0;
         while(abs(getPosition()) < distance)
         {
             trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
@@ -375,6 +379,7 @@ namespace ev3ys
             trj.makePositionBased(velocity, tachoToCm(max(abs(leftDistance), abs(rightDistance))), linearAcceleration, startLinearVelocity, endLinearVelocity);
             double empty;
             Kp = KpArc;
+            lastError = 0;
             // velocity = cmToTacho(velocity);
             while(abs(getAngle()) < angle)
             {
@@ -426,6 +431,7 @@ namespace ev3ys
 
         double empty;
         Kp = KpRegular;
+        lastError = 0;
         while(t.secElapsed() < seconds)
         {
             trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
@@ -483,6 +489,7 @@ namespace ev3ys
             trj.makeTimeBased(velocity, seconds, linearAcceleration, startLinearVelocity, endLinearVelocity);
             double empty;
             Kp = KpArc;
+            lastError = 0;
             while(t.secElapsed() < seconds)
             {
                 trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
@@ -522,6 +529,7 @@ namespace ev3ys
             t.reset();
             resetPosition();
             Kp = KpRegular;
+            lastError = 0;
         }
         double empty;
         trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
@@ -567,6 +575,7 @@ namespace ev3ys
             t.reset();
             trj.makeTimeBased(velocity, DURATION_FOREVER, linearAcceleration, startAngularVelocity, endAngularVelocity);
             Kp = KpArc;
+            lastError = 0;
         }
         double empty;
         if(mode == speedMode::CONTROLLED)

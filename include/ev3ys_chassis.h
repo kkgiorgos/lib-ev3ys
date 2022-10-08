@@ -55,13 +55,13 @@ namespace ev3ys
         double axleLength;
         speeds wheelSpeeds{};
 
-        double Kp, KpRegular, KpArc;
+        double Kp, Kd, KpRegular, KpArc;
+        double lastError;
 
         double tachoToCm(double tacho);
         double angularToTacho(double angular);
 
-        double calculateLinear(double leftTacho, double rightTacho);
-        double calculateAngular(double leftTacho, double rightTacho);
+        
 
         speeds calculateArcSpeeds(double velocity, double leftDistance, double rightDistance, double center, double angle);
 
@@ -69,7 +69,7 @@ namespace ev3ys
         bool actuateControlledExternal(double time);
 
     public:
-        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc);
+        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc, double Kd);
 
         void setMode(speedMode mode);
         speedMode getMode();
@@ -94,7 +94,8 @@ namespace ev3ys
         void actuateKinematically(double linearVelocity, double angularVelocity);
         void actuateControlled(double leftSpeed, double rightSpeed);
         double calculateArcWheelDistances(double center, double angle, wheels wheel);
-
+        double calculateLinear(double leftTacho, double rightTacho);
+        double calculateAngular(double leftTacho, double rightTacho);
 
         //Straight and Turn only controlled tank only unregulated/regulated Arc is for everything
 

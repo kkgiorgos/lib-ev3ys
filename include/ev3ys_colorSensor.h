@@ -15,7 +15,8 @@ namespace ev3ys
         GREEN,
         YELLOW,
         BLACK,
-        WHITE
+        WHITE,
+        NO_COLOR
     };
 
     struct colorspaceRGB{
@@ -56,16 +57,21 @@ namespace ev3ys
         colorCalibration colorData;
         bool lineDetected;
         int cutoffValue;
+        rgb_raw_t rawRgb;
         colorspaceRGB rgb;
         colorspaceHSV hsv;
         colors col;
         ev3cxx::Bluetooth bt;
         ev3ys::timer t;
 
-        int lastSample;
-        int filterValue;
+        int lastSampleRef;
+        colorspaceRGB lastSampleRGB;
+        int filterValueRef;
+        int filterValueRGB;
         bool resetFilter;
         bool filter;
+        double filterDuration;
+
 
     public:
         colorSensor(ev3cxx::SensorPort port, bool normalised, char *calDir, int colorsAmount = 5) : ev3cxx::ColorSensor(port) //ATTENTION!!! calDir must exist inside SDcard root directory
@@ -96,9 +102,11 @@ namespace ev3ys
             hsv = {0, 0, 0};
             col = colors::BLACK;
 
-            lastSample = 0;
+            lastSampleRef = 0;
+            lastSampleRGB = {0, 0, 0, 0};
             resetFiltering();
-            setFiltering(true, 4);
+            setFilteringRef(true, 0.01, 10);
+            setFilteringRGB(true, 0.01, 30);
         }
 
         void setNormalisation(bool normalised, int colorsAmount = 5)
@@ -114,16 +122,28 @@ namespace ev3ys
             }
         }
 
-        void setFiltering(bool filtering, int filterValue = 0)
+        void setFilteringRef(bool filtering, double filterDuration = 0.01, int filterValue = 0)
         {
             resetFiltering();
-            this->filterValue = filterValue;
+            this->filterValueRef = filterValue;
+            this->filterDuration = filterDuration;
+            filter = filtering;
+        }
+
+        void setFilteringRGB(bool filtering, double filterDuration = 0.01, int filterValue = 0)
+        {
+            resetFiltering();
+            this->filterValueRGB = filterValue;
+            this->filterDuration = filterDuration;
             filter = filtering;
         }
 
         void resetFiltering()
         {
+            t.reset();
             resetFilter = true;
+            lineDetected = false;
+            lastSampleRef = getReflected();
         }
 
         void setCutoffValue(int value)
@@ -152,31 +172,33 @@ namespace ev3ys
 
             if(filter)
             {
-                if(abs(sample - lastSample) > filterValue)
+                if(!lineDetected)
                 {
-                    lineDetected = sample <= cutoffValue;
-                    if(!resetFilter)
-                        sample = 60;
-                }
-                else
-                {
-                    lineDetected = false;
+                    if(!resetFilter && t.secElapsed() > filterDuration)
+                    {
+                        lineDetected = abs(sample - lastSampleRef) > filterValueRef;
+                        t.reset();
+                        lastSampleRef = sample;
+                    }
+                    else if(resetFilter)
+                    {
+                        lastSampleRef = sample;
+                    }
                 }
             }
             else
             {
                 lineDetected = sample <= cutoffValue;
             }
-            
-            resetFilter = false;
-            lastSample = sample;
+
+            resetFilter = false;            
 
             return sample;
         }
 
         colorspaceRGB& getRGB()
         {	
-            rgb_raw_t values = reflectedRawRgb();
+            rgb_raw_t values = rawRgb = reflectedRawRgb();
             //t.secDelay(0.001);
             tslp_tsk(10);
             
@@ -202,16 +224,21 @@ namespace ev3ys
 
             if(filter)
             {
-                if(abs(rgb.white - lastSample) > filterValue)
+                if(!lineDetected)
                 {
-                    lineDetected = rgb.white <= cutoffValue;
-                    if(!resetFilter)
-                        rgb.white = 60;
-                }
-                else
-                {
-                    lineDetected = false;
-                }
+                    if(!resetFilter && t.secElapsed() > filterDuration)
+                    {
+                        lineDetected = abs(rgb.red - lastSampleRGB.red) > filterValueRGB
+                                || abs(rgb.green - lastSampleRGB.green) > filterValueRGB
+                                || abs(rgb.blue - lastSampleRGB.blue) > filterValueRGB;
+                        t.reset();
+                        lastSampleRGB = rgb;
+                    }
+                    else if(resetFilter)
+                    {
+                        lastSampleRGB = rgb;
+                    }
+                }   
             }
             else
             {
@@ -219,7 +246,6 @@ namespace ev3ys
             }
             
             resetFilter = false;
-            lastSample = rgb.white;
             
             return rgb;
         }
@@ -260,47 +286,51 @@ namespace ev3ys
 
         colors& getColor()
         {
-            // hsv = getHSV();
-
-            // if(hsv.saturation < colorData.minColorSaturation)
-            // {
-            //     if(hsv.value > colorData.greyscaleIntersection)
-            //         col = colors::WHITE;
-            //     else
-            //         col = colors::BLACK;
-            // }
-            // else
-            // {
-            //     for(auto colorProt: colorData.hues)
-            //     {
-            //         if(checkRange(hsv.hue, colorProt.hue, colorProt.zoneSize))
-            //             col = colorProt.color;
-            //     }
-            // }
-
-            switch(color())
+            hsv = getHSV(); //As currently designed the rgb variable has the current values so it can be used as is
+        
+            if(rawRgb.r + rawRgb.g + rawRgb.b < 5)
             {
-                case COLOR_RED:
-                    col = RED;
-                    break;
-                case COLOR_BLUE:
-                    col = BLUE;
-                    break;
-                case COLOR_GREEN:
-                    col = GREEN;
-                    break;
-                case COLOR_YELLOW:
-                    col = YELLOW;
-                    break;
-                case COLOR_BLACK:
-                    col = BLACK;
-                    break;
-                case COLOR_WHITE:
-                case COLOR_BROWN:
-                case COLOR_NONE:
-                    col = WHITE;
-                    break;
+                col = colors::NO_COLOR;
             }
+            else if(hsv.saturation < colorData.minColorSaturation)
+            {
+                if(hsv.value > colorData.greyscaleIntersection)
+                    col = colors::WHITE;
+                else
+                    col = colors::BLACK;
+            }
+            else
+            {
+                for(auto colorProt: colorData.hues)
+                {
+                    if(checkRange(hsv.hue, colorProt.hue, colorProt.zoneSize))
+                        col = colorProt.color;
+                }
+            }
+
+            // switch(color())
+            // {
+            //     case COLOR_RED:
+            //         col = RED;
+            //         break;
+            //     case COLOR_BLUE:
+            //         col = BLUE;
+            //         break;
+            //     case COLOR_GREEN:
+            //         col = GREEN;
+            //         break;
+            //     case COLOR_YELLOW:
+            //         col = YELLOW;
+            //         break;
+            //     case COLOR_BLACK:
+            //         col = BLACK;
+            //         break;
+            //     case COLOR_WHITE:
+            //     case COLOR_BROWN:
+            //     case COLOR_NONE:
+            //         col = WHITE;
+            //         break;
+            // }
             
             return col;
         }

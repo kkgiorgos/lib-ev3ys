@@ -86,6 +86,6 @@ namespace ev3ys
         void distance(double velocity, double distance, breakMode stopMode = breakMode::BRAKE);
         void seconds(double velocity, double seconds, breakMode stopMode = breakMode::BRAKE);
         void unlimited(double velocity, bool reset = false);
-        void lines(double velocity, int lines = 1, breakMode stopMode = breakMode::BRAKE);
+        void lines(double velocity, int lines = 1, breakMode stopMode = breakMode::BRAKE, double lineSkipDistance = 2, bool addFinalLineSkip = false);
     };
 }

@@ -9,7 +9,7 @@ namespace ev3ys
     const int motor::maxLargeSpeed = 1165;
     const int motor::maxUnregSpeedPCT = 100;
     const int motor::maxUnregSpeedDPS = 1150;
-    const int motor::speedLimit = 1150;
+    const int motor::speedLimit = 1250;//1150
 
     motor::motor(MotorPort port, bool inversed, MotorType type) : Motor(port, type)
     {
