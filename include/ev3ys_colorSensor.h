@@ -163,7 +163,7 @@ namespace ev3ys
 
         int getReflected()
         {
-            int sample = reflected();
+            int sample = reflectedRaw();
             if (normalisedRef)
             {
                 sample = (int)((offsetRef + sample) * scaleRef);

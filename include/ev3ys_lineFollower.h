@@ -6,6 +6,7 @@
 #include "ev3ys_chassis.h"
 #include "ev3ys_math.h"
 #include "ev3ys_motor_trajectory.h"
+#include <map>
 
 namespace ev3ys
 {
@@ -27,6 +28,13 @@ namespace ev3ys
         NO_SENSORS
     };
 
+    struct PID_params
+    {
+        double Kp;
+        double Ki;
+        double Kd;
+    };
+
     class lineFollower
     {
     private:
@@ -45,14 +53,16 @@ namespace ev3ys
         int sensorAmount;
         speedMode motionMode;
         followModes followMode;
-        bool alignMode;
 
         double acceleration, startSpeed, endSpeed;
 
         double loopPeriod;
         double kp, ki, kd;
-        double speedPIDnormalisation;
-        double errorScaleFactor;
+        std::map<double, PID_params> pidSpeedParams; 
+        bool forcedParams;
+        bool lineDetected;
+
+        double scaling;
 
         double integral, lastError;
         double target;
@@ -60,7 +70,7 @@ namespace ev3ys
         void setSpeedMode();
         void resetChassisMode();
 
-        void resetPID();
+        void resetPID(double velocity);
         double calculateError();
 
         void runPID(double speed);
@@ -72,9 +82,9 @@ namespace ev3ys
         void setAccelParams(double acceleration, double startSpeed, double endSpeed);
         void setSensorMode(sensorModes mode);
         void initializeMotionMode(speedMode mode);
-        void setPIDparams(double kp, double ki, double kd, double speed);
-        void setErrorScaleFactor(double factor);
-        void setAlignMode(bool enable = true);
+        void addPIDparams(double velocity, double kp, double ki, double kd);
+        void setPIDparams(double kp, double ki, double kd);
+        void forcePIDparams(bool doForce = true);
 
         void setDoubleFollowMode(const char *leftPos, const char *rightPos);
         void setSingleFollowMode(const char *leftPos, const char *rightPos);

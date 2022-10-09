@@ -17,15 +17,15 @@ namespace ev3ys
         setAccelParams(180, 0, 0);
         setSensorMode(sensorModes::WHITE_RGB);
         initializeMotionMode(speedMode::UNREGULATED);
-        setPIDparams(0.6, 0.06, 6, 75);
+        setPIDparams(0.6, 0.06, 6);
+        addPIDparams(0, 0.6, 0.06, 6);
+        forcePIDparams(false);
 
-        resetPID();
+        resetPID(0);
         trj.makeStationary(0, 0);
         trj.setLimits(driveBase->getTachoSpeedLimit(), 6000);
         setSingleFollowMode("S", "50");
         sensorAmount = 1;
-        setErrorScaleFactor(1);
-        setAlignMode(false);
     }
 
     lineFollower::lineFollower(int loopFrequency, chassis *driveBase, colorSensor *leftSensor, colorSensor *rightSensor)
@@ -40,15 +40,15 @@ namespace ev3ys
         setAccelParams(180, 0, 0);
         setSensorMode(sensorModes::WHITE_RGB);
         initializeMotionMode(speedMode::UNREGULATED);
-        setPIDparams(0.6, 0.06, 6, 75);
+        setPIDparams(0.6, 0.06, 6);
+        addPIDparams(0, 0.6, 0.06, 6);
+        forcePIDparams(false);
 
-        resetPID();
+        resetPID(0);
         trj.makeStationary(0, 0);
         trj.setLimits(driveBase->getTachoSpeedLimit(), 6000);
         setDoubleFollowMode("SL", "SR");
         sensorAmount = 2;
-        setErrorScaleFactor(1);
-        setAlignMode(false);
     }
 
     void lineFollower::setAccelParams(double acceleration, double startSpeed, double endSpeed)
@@ -88,24 +88,32 @@ namespace ev3ys
         driveBase->setUnregulatedDPS(chassisUnregulatedDPS);
     }
 
-    void lineFollower::setPIDparams(double kp, double ki, double kd, double speed)
+    void lineFollower::addPIDparams(double velocity, double kp, double ki, double kd)
+    {
+        pidSpeedParams[velocity] = {kp, ki, kd};
+    }
+
+    void lineFollower::setPIDparams(double kp, double ki, double kd)
     {
         this->kp = kp;
         this->ki = ki;
         this->kd = kd;
-        speedPIDnormalisation = speed;
+        forcePIDparams(true);
     }
 
-    void lineFollower::setErrorScaleFactor(double factor)
+    void lineFollower::forcePIDparams(bool doForce)
     {
-        errorScaleFactor = factor;
+        forcedParams = doForce;
     }
 
     void lineFollower::setDoubleFollowMode(const char *leftPos, const char *rightPos)
     {
         target = 0;
         if(leftPos[0] == 'S' && rightPos[0] == 'S')
+        {
             followMode = TWO_SENSOR;
+            scaling = 1;
+        }
         else if(leftPos[0] == 'S')
         {
             if(leftPos[1] == 'L')
@@ -113,6 +121,7 @@ namespace ev3ys
             else
                 followMode = RIGHT_SENSOR_LEFT_POSITION;
             target = atoi(rightPos);
+            scaling = 100.0 / min(100 - target, target);
         }
         else if(rightPos[0] == 'S')
         {
@@ -121,9 +130,13 @@ namespace ev3ys
             else
                 followMode = RIGHT_SENSOR_RIGHT_POSITION;
             target = atoi(leftPos);
+            scaling = 100.0 / min(100 - target, target);
         }
         else
+        {
             followMode = NO_SENSORS;
+            scaling = 0;
+        }
     }
 
     void lineFollower::setSingleFollowMode(const char *leftPos, const char *rightPos)
@@ -140,19 +153,32 @@ namespace ev3ys
         }
         else
             followMode = NO_SENSORS;
-    }
-    
-    void lineFollower::setAlignMode(bool enable)
-    {
-        alignMode = enable;
+        scaling = 1;
     }
 
-    void lineFollower::resetPID()
+    void lineFollower::resetPID(double velocity)
     {
         integral = 0;
         lastError = 0;
         leftSensor->resetFiltering();
         rightSensor->resetFiltering();
+        if(!forcedParams)
+        {
+            map<double, PID_params>::iterator params;
+            params = pidSpeedParams.find(velocity);
+            if(params != pidSpeedParams.end())
+            {
+                kp = params->second.Kp;
+                ki = params->second.Ki;
+                kd = params->second.Kd;
+            }
+            else
+            {
+                kp = pidSpeedParams[0].Kp;
+                ki = pidSpeedParams[0].Ki;
+                kd = pidSpeedParams[0].Kd;
+            }
+        }
     }
 
     double lineFollower::calculateError()
@@ -181,6 +207,7 @@ namespace ev3ys
                 leftVal = target;
             }
             error = leftVal - rightVal;
+            lineDetected = sensor->getLineDetected();
         }
         else
         {
@@ -197,17 +224,32 @@ namespace ev3ys
             
 
             if(followMode == followModes::TWO_SENSOR)
+            {
                 error = leftVal - rightVal;
+                lineDetected = leftSensor->getLineDetected() || rightSensor->getLineDetected();
+            }
             else if(followMode == followModes::LEFT_SENSOR_LEFT_POSITION)
+            {
                 error = leftVal - target;
+                lineDetected = rightSensor->getLineDetected();
+            }
             else if(followMode == followModes::LEFT_SENSOR_RIGHT_POSITION)
+            {
                 error = target - leftVal;
+                lineDetected = rightSensor->getLineDetected();
+            }
             else if(followMode == followModes::RIGHT_SENSOR_LEFT_POSITION)
+            {
                 error = rightVal - target;
+                lineDetected = leftSensor->getLineDetected();
+            }
             else if(followMode == followModes::RIGHT_SENSOR_RIGHT_POSITION)
+            {
                 error = target - rightVal;
+                lineDetected = leftSensor->getLineDetected();
+            }
         }
-        return error * errorScaleFactor;
+        return error;
     }
 
     void lineFollower::runPID(double speed)
@@ -217,7 +259,7 @@ namespace ev3ys
         double derivative = error - lastError;
         lastError = error;
 
-        double result = (kp * error + ki * integral + kd * derivative) * (alignMode ? 1 : (speed / speedPIDnormalisation)); 
+        double result = (kp * error + ki * integral + kd * derivative) * scaling; 
 
         double speedLeft = speed + result;
         double speedRight = speed - result;
@@ -227,14 +269,14 @@ namespace ev3ys
 
     void lineFollower::stop(breakMode stopMode)
     {
-        resetPID();
+        resetPID(0);
         driveBase->stop(stopMode);
         resetChassisMode();
     }
 
     void lineFollower::distance(double velocity, double distance, breakMode stopMode)
     {
-        resetPID();
+        resetPID(velocity);
         initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
@@ -246,21 +288,24 @@ namespace ev3ys
             double empty;
             while(abs(driveBase->getPosition()) < distance)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                 velocity = driveBase->cmToTacho(velocity);
                 if(velocity == 0) break;
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                tslp_tsk(1);
+                // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
             }
         }
         else
         {
+            velocity = driveBase->cmToTacho(velocity);
             while(abs(driveBase->getPosition()) < distance)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                tslp_tsk(1);
             }
         }
         resetChassisMode();
@@ -269,7 +314,7 @@ namespace ev3ys
 
     void lineFollower::seconds(double velocity, double seconds, breakMode stopMode)
     {
-        resetPID();
+        resetPID(velocity);
         initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
@@ -281,21 +326,28 @@ namespace ev3ys
             double empty;
             while(t.secElapsed() < seconds)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                 velocity = driveBase->cmToTacho(velocity);
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                tslp_tsk(1);
+                // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
             }
         }
         else
         {
+            velocity = driveBase->cmToTacho(velocity);
+            int counter = 0;
             while(t.secElapsed() < seconds)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 runPID(velocity);
-                periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                counter++;
+                tslp_tsk(1);
             }
+            display.resetScreen();
+            display.format("Freq:\n%  \n") %(counter/t.secElapsed());
         }
         resetChassisMode();
         stop(stopMode);
@@ -309,7 +361,7 @@ namespace ev3ys
             driveBase->resetPosition();
             t.reset();
             trj.makeTimeBased(velocity, DURATION_FOREVER, acceleration, startSpeed, endSpeed);
-            resetPID();
+            resetPID(velocity);
         }
 
         if(motionMode == speedMode::CONTROLLED)
@@ -318,14 +370,17 @@ namespace ev3ys
             trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
             velocity = driveBase->cmToTacho(velocity);
             runPID(velocity);
-            periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
-            periodTimer.reset();
+            tslp_tsk(1);
+            // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+            // periodTimer.reset();
         }
         else
         {
+            velocity = driveBase->cmToTacho(velocity);
             runPID(velocity);
-            periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
-            periodTimer.reset();
+            // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+            tslp_tsk(1);
+            // periodTimer.reset();
         }
 
         resetChassisMode();
@@ -333,7 +388,7 @@ namespace ev3ys
 
     void lineFollower::lines(double velocity, int lines, breakMode stopMode, double lineSkipDistance, bool addFinalLineSkip)
     {
-        resetPID();
+        resetPID(velocity);
         initializeMotionMode(motionMode);
         setSpeedMode();
         t.reset();
@@ -347,42 +402,48 @@ namespace ev3ys
             {
                 leftSensor->resetFiltering();
                 rightSensor->resetFiltering();
-                while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                lineDetected = false;
+                while(!lineDetected)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                     velocity = driveBase->cmToTacho(velocity);
                     runPID(velocity);
-                    while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
-                    {
-                        calculateError();
-                    }
+                    // while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                    // {
+                    //     calculateError();
+                    // }
+                    tslp_tsk(1);
                 }
                 driveBase->resetPosition();
                 followModes prevMode = followMode;
                 followMode = NO_SENSORS;
                 while(driveBase->getPosition() < lineSkipDistance)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                     velocity = driveBase->cmToTacho(velocity);
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    tslp_tsk(1);
+
                 }
                 followMode = prevMode;
             }
             leftSensor->resetFiltering();
             rightSensor->resetFiltering();
-            while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+            lineDetected = false;
+            while(!lineDetected)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                 velocity = driveBase->cmToTacho(velocity);
                 runPID(velocity);
-                while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
-                {
-                    calculateError();
-                }
+                // while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                // {
+                //     calculateError();
+                // }
+                tslp_tsk(1);
             }
             if(addFinalLineSkip)
             {
@@ -391,51 +452,57 @@ namespace ev3ys
                 followMode = NO_SENSORS;
                 while(driveBase->getPosition() < lineSkipDistance)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
                     velocity = driveBase->cmToTacho(velocity);
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
                 }
                 followMode = prevMode;
             }
         }
         else
         {
+            velocity = driveBase->cmToTacho(velocity);
             for(int i = 0; i < lines - 1; i++)
             {
                 leftSensor->resetFiltering();
                 rightSensor->resetFiltering();
-                while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                lineDetected = false;
+                while(!lineDetected)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     runPID(velocity);
-                    while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
-                    {
-                        calculateError();
-                    }
+                    // while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                    // {
+                    //     calculateError();
+                    // }
+                    tslp_tsk(1);
                 }
                 driveBase->resetPosition();
                 followModes prevMode = followMode;
                 followMode = NO_SENSORS;
                 while(driveBase->getPosition() < lineSkipDistance)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    tslp_tsk(1);
                 }
                 followMode = prevMode;
             }
             leftSensor->resetFiltering();
             rightSensor->resetFiltering();
-            while(!(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+            lineDetected = false;
+            while(!lineDetected)
             {
-                periodTimer.reset();
+                // periodTimer.reset();
                 runPID(velocity);
-                while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
-                {
-                    calculateError();
-                }
+                // while(periodTimer.secElapsed() < loopPeriod && !(leftSensor->getLineDetected() || rightSensor->getLineDetected()))
+                // {
+                //     calculateError();
+                // }
+                tslp_tsk(1);
             }
             if(addFinalLineSkip)
             {
@@ -444,9 +511,10 @@ namespace ev3ys
                 followMode = NO_SENSORS;
                 while(driveBase->getPosition() < lineSkipDistance)
                 {
-                    periodTimer.reset();
+                    // periodTimer.reset();
                     runPID(velocity);
-                    periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    // periodTimer.secDelay(loopPeriod - periodTimer.secElapsed());
+                    tslp_tsk(1);
                 }
                 followMode = prevMode;
             }
