@@ -143,7 +143,7 @@ namespace ev3ys
             t.reset();
             resetFilter = true;
             lineDetected = false;
-            lastSampleRef = getReflected();
+            // lastSampleRef = getReflected();
         }
 
         void setCutoffValue(int value)
@@ -163,7 +163,7 @@ namespace ev3ys
 
         int getReflected()
         {
-            int sample = reflectedRaw();
+            int sample = reflected();
             if (normalisedRef)
             {
                 sample = (int)((offsetRef + sample) * scaleRef);
