@@ -384,14 +384,13 @@ namespace ev3ys
         resetChassisMode();
     }
 
-    void lineFollower::lines(double velocity, int lines, breakMode stopMode, double lineSkipDistance, bool addFinalLineSkip)
+    void lineFollower::lines(double velocity, int lines, breakMode stopMode, double distanceBeforeLine, double lineSkipDistance, bool addFinalLineSkip)
     {
-        resetPID(velocity);
         initializeMotionMode(motionMode);
         setSpeedMode();
-        t.reset();
-        driveBase->resetPosition();
         double positionReference = 0;
+
+        unlimited(velocity, true);
 
         if(motionMode == speedMode::CONTROLLED)
         {
@@ -399,40 +398,41 @@ namespace ev3ys
             double empty;
             for(int i = 0; i < lines - 1; i++)
             {
+                //Follow line for pre line distance
+                positionReference = driveBase->getPosition();
+                while((driveBase->getPosition() - positionReference) < distanceBeforeLine)
+                {
+                    unlimited(velocity);
+                }
+                //Follow line until intersect
                 leftSensor->resetFiltering();
                 rightSensor->resetFiltering();
                 lineDetected = false;
                 while(!lineDetected)
                 {
-                    periodTimer.reset();
-                    trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                    velocity = driveBase->cmToTacho(velocity);
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
+                //Skip intersect
                 positionReference = driveBase->getPosition();
                 followModes prevMode = followMode;
                 followMode = NO_SENSORS;
                 while((driveBase->getPosition() - positionReference) < lineSkipDistance)
                 {
-                    periodTimer.reset();
-                    trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                    velocity = driveBase->cmToTacho(velocity);
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
                 followMode = prevMode;
+            }
+            positionReference = driveBase->getPosition();
+            while((driveBase->getPosition() - positionReference) < distanceBeforeLine)
+            {
+                unlimited(velocity);
             }
             leftSensor->resetFiltering();
             rightSensor->resetFiltering();
             lineDetected = false;
             while(!lineDetected)
             {
-                periodTimer.reset();
-                trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                velocity = driveBase->cmToTacho(velocity);
-                runPID(velocity);
-                tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                unlimited(velocity);
             }
             if(addFinalLineSkip)
             {
@@ -441,48 +441,50 @@ namespace ev3ys
                 followMode = NO_SENSORS;
                 while((driveBase->getPosition() - positionReference) < lineSkipDistance)
                 {
-                    periodTimer.reset();
-                    trj.getReference(t.secElapsed(), &empty, &velocity, &empty);
-                    velocity = driveBase->cmToTacho(velocity);
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
                 followMode = prevMode;
             }
         }
         else
         {
-            velocity = driveBase->cmToTacho(velocity);
             for(int i = 0; i < lines - 1; i++)
             {
+                //Follow line for pre line distance
+                positionReference = driveBase->getPosition();
+                while((driveBase->getPosition() - positionReference) < distanceBeforeLine)
+                {
+                    unlimited(velocity);
+                }
+                //Follow line until intersect
                 leftSensor->resetFiltering();
                 rightSensor->resetFiltering();
                 lineDetected = false;
                 while(!lineDetected)
                 {
-                    periodTimer.reset();
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
+                //Skip intersect
                 positionReference = driveBase->getPosition();
                 followModes prevMode = followMode;
                 followMode = NO_SENSORS;
                 while((driveBase->getPosition() - positionReference) < lineSkipDistance)
                 {
-                    periodTimer.reset();
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
                 followMode = prevMode;
+            }
+            positionReference = driveBase->getPosition();
+            while((driveBase->getPosition() - positionReference) < distanceBeforeLine)
+            {
+                unlimited(velocity);
             }
             leftSensor->resetFiltering();
             rightSensor->resetFiltering();
             lineDetected = false;
             while(!lineDetected)
             {
-                periodTimer.reset();
-                runPID(velocity);
-                tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                unlimited(velocity);
             }
             if(addFinalLineSkip)
             {
@@ -491,13 +493,12 @@ namespace ev3ys
                 followMode = NO_SENSORS;
                 while((driveBase->getPosition() - positionReference) < lineSkipDistance)
                 {
-                    periodTimer.reset();
-                    runPID(velocity);
-                    tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                    unlimited(velocity);
                 }
                 followMode = prevMode;
             }
         }
+
         resetChassisMode();
         stop(stopMode);
     }
