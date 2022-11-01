@@ -200,7 +200,7 @@ namespace ev3ys
         {	
             rgb_raw_t values = rawRgb = reflectedRawRgb();
             //t.secDelay(0.001);
-            tslp_tsk(10);
+            // tslp_tsk(10);
             
             if (normalisedRGB)
             {
