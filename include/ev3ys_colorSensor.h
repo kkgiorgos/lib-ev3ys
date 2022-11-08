@@ -284,6 +284,15 @@ namespace ev3ys
             return hsv;
         }
 
+        void setColorDataSat(double minColorSaturation)
+        {
+            colorData.minColorSaturation = minColorSaturation;
+        }
+        double getColorDataSat()
+        {
+            return colorData.minColorSaturation;
+        }
+
         colors& getColor()
         {
             hsv = getHSV(); //As currently designed the rgb variable has the current values so it can be used as is
