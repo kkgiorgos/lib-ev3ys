@@ -303,7 +303,7 @@ namespace ev3ys
             {
                 periodTimer.reset();
                 runPID(velocity);
-                tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+                tslp_tsk(max((loopPeriod - periodTimer.secElapsed()) * 1000, 1.0));
             }
         }
         resetChassisMode();
@@ -377,7 +377,7 @@ namespace ev3ys
         {
             velocity = driveBase->cmToTacho(velocity);
             runPID(velocity);
-            tslp_tsk((loopPeriod - periodTimer.secElapsed()) * 1000);
+            tslp_tsk(max((loopPeriod - periodTimer.secElapsed()) * 1000, 1.0));
             periodTimer.reset();
         }
 

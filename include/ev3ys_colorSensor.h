@@ -217,9 +217,12 @@ namespace ev3ys
             else
             {
                 rgb.white = values.r + values.g + values.b;
-                rgb.red = clamp(values.r, 1, 255);
-                rgb.green = clamp(values.g, 1, 255);
-                rgb.blue = clamp(values.b, 1, 255);
+                // rgb.red = clamp(values.r, 1, 255);
+                // rgb.green = clamp(values.g, 1, 255);
+                // rgb.blue = clamp(values.b, 1, 255);
+                rgb.red = values.r;
+                rgb.green = values.g;
+                rgb.blue = values.b;
             }  
 
             if(filter)
