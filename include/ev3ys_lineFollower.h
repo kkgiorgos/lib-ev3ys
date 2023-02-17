@@ -89,6 +89,8 @@ namespace ev3ys
         void setDoubleFollowMode(const char *leftPos, const char *rightPos);
         void setSingleFollowMode(const char *leftPos, const char *rightPos);
 
+        bool getLineDetected() {return lineDetected;}
+
         void stop(breakMode stopMode = breakMode::COAST);
 
         //Velocity units: PCT -> UNREGULATED, DPS -> REGULATED, CMPS -> CONTROLLED
@@ -96,6 +98,6 @@ namespace ev3ys
         void distance(double velocity, double distance, breakMode stopMode = breakMode::BRAKE);
         void seconds(double velocity, double seconds, breakMode stopMode = breakMode::BRAKE);
         void unlimited(double velocity, bool reset = false);
-        void lines(double velocity, int lines = 1, breakMode stopMode = breakMode::BRAKE, double lineSkipDistance = 2, bool addFinalLineSkip = false);
+        void lines(double velocity, int lines = 1, breakMode stopMode = breakMode::BRAKE, double distanceBeforeLine = 5, double lineSkipDistance = 2, bool addFinalLineSkip = false);
     };
 }

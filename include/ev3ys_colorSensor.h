@@ -200,7 +200,7 @@ namespace ev3ys
         {	
             rgb_raw_t values = rawRgb = reflectedRawRgb();
             //t.secDelay(0.001);
-            tslp_tsk(10);
+            // tslp_tsk(10);
             
             if (normalisedRGB)
             {
@@ -217,9 +217,12 @@ namespace ev3ys
             else
             {
                 rgb.white = values.r + values.g + values.b;
-                rgb.red = clamp(values.r, 1, 255);
-                rgb.green = clamp(values.g, 1, 255);
-                rgb.blue = clamp(values.b, 1, 255);
+                // rgb.red = clamp(values.r, 1, 255);
+                // rgb.green = clamp(values.g, 1, 255);
+                // rgb.blue = clamp(values.b, 1, 255);
+                rgb.red = values.r;
+                rgb.green = values.g;
+                rgb.blue = values.b;
             }  
 
             if(filter)
@@ -282,6 +285,15 @@ namespace ev3ys
             if (hsv.hue < 0)
                 hsv.hue += 360;
             return hsv;
+        }
+
+        void setColorDataSat(double minColorSaturation)
+        {
+            colorData.minColorSaturation = minColorSaturation;
+        }
+        double getColorDataSat()
+        {
+            return colorData.minColorSaturation;
         }
 
         colors& getColor()
