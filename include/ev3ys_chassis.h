@@ -55,13 +55,13 @@ namespace ev3ys
         double axleLength;
         speeds wheelSpeeds{};
 
+        double gearRatio;
+
         double Kp, Kd, KpRegular, KpArc;
         double lastError;
 
         double tachoToCm(double tacho);
         double angularToTacho(double angular);
-
-        
 
         speeds calculateArcSpeeds(double velocity, double leftDistance, double rightDistance, double center, double angle);
 
@@ -69,7 +69,7 @@ namespace ev3ys
         bool actuateControlledExternal(double time);
 
     public:
-        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc, double Kd);
+        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double KpRegular, double KpArc, double Kd);
 
         void setMode(speedMode mode);
         speedMode getMode();

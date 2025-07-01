@@ -90,7 +90,7 @@ namespace ev3ys
 
     void lineFollower::addPIDparams(double velocity, double kp, double ki, double kd)
     {
-        pidSpeedParams[velocity] = {kp, ki, kd};
+    //    pidSpeedParams[velocity] = {kp, ki, kd};
     }
 
     void lineFollower::setPIDparams(double kp, double ki, double kd)
@@ -163,7 +163,7 @@ namespace ev3ys
         leftSensor->resetFiltering();
         rightSensor->resetFiltering();
         if(!forcedParams)
-        {
+        {/*
             map<double, PID_params>::iterator params;
             params = pidSpeedParams.find(velocity);
             if(params != pidSpeedParams.end())
@@ -177,7 +177,7 @@ namespace ev3ys
                 kp = pidSpeedParams[0].Kp;
                 ki = pidSpeedParams[0].Ki;
                 kd = pidSpeedParams[0].Kd;
-            }
+            }*/
         }
     }
 
@@ -255,6 +255,7 @@ namespace ev3ys
     void lineFollower::runPID(double speed)
     {
         double error = calculateError();
+	//format(bt, "Error: %  \n\r\n\n\n\r")%error;
         integral = (integral + error) / 2;
         double derivative = error - lastError;
         lastError = error;

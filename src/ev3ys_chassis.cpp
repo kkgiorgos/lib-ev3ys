@@ -5,12 +5,13 @@ using namespace ev3cxx;
 
 namespace ev3ys
 {
-    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double KpRegular, double KpArc, double Kd)
+    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double KpRegular, double KpArc, double Kd)
     {
         bt.open();
         wheelCircumference = wheelDiameter * MATH_PI;
         chassisRadius = axleLength / 2;
         this->axleLength = axleLength;
+        this->gearRatio = gearRatio;
         this->leftMotor = leftMotor;
         this->rightMotor = rightMotor;
 
@@ -107,12 +108,12 @@ namespace ev3ys
 
     double chassis::tachoToCm(double tacho)
     {
-        return (tacho / 360) * wheelCircumference;
+        return (tacho * gearRatio / 360) * wheelCircumference;
     }
 
     double chassis::cmToTacho(double cm)
     {
-        return (cm * 360) / wheelCircumference;
+        return ((cm * 360) / wheelCircumference) / gearRatio;
     }
 
     double chassis::angularToTacho(double angular)
