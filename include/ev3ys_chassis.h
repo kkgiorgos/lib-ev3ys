@@ -99,7 +99,7 @@ namespace ev3ys
         bool getUnregulatedDPS();
         void resetPosition();
         
-        void resetOdometry(pose initial);
+        void resetOdometry(pose initial = {0, 0, 0});
         void iterateOdometry();
         pose getPose();
 
