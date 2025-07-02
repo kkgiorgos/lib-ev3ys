@@ -24,6 +24,12 @@ namespace ev3ys
         double right;
     };
 
+    struct pose {
+        double x;
+        double y;
+        double theta;
+    };
+
     class chassis
     {
     private:
@@ -60,6 +66,11 @@ namespace ev3ys
         double Kp, Kd, KpRegular, KpArc;
         double lastError;
 
+        pose ps;
+        double r, s;
+        double odometryPeriod;
+        double prevLeftDist, prevRightDist;
+
         double tachoToCm(double tacho);
         double angularToTacho(double angular);
 
@@ -69,7 +80,7 @@ namespace ev3ys
         bool actuateControlledExternal(double time);
 
     public:
-        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double KpRegular, double KpArc, double Kd);
+        chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double odometryFrequency, double KpRegular, double KpArc, double Kd);
 
         void setMode(speedMode mode);
         speedMode getMode();
@@ -79,7 +90,6 @@ namespace ev3ys
         void setStallTolerance(int speedTolerancePCT, int speedToleranceDPS, double speedToleranceLinear, double speedToleranceAngular, double stallTime);
         void setUnregulatedDPS(bool isDPS = true);
 
-
         double cmToTacho(double cm);
         double getLinearVelocity();
         double getAngularVelocity();
@@ -88,6 +98,10 @@ namespace ev3ys
         double getKp();
         bool getUnregulatedDPS();
         void resetPosition();
+        
+        void resetOdometry(pose initial);
+        void iterateOdometry();
+        pose getPose();
 
         void stop(breakMode stopMode = breakMode::COAST);
 

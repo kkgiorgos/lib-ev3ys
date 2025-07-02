@@ -1,17 +1,19 @@
 #include "ev3ys_chassis.h"
+#include <cmath>
 
 using namespace std;
 using namespace ev3cxx;
 
 namespace ev3ys
 {
-    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double KpRegular, double KpArc, double Kd)
+    chassis::chassis(motor *leftMotor, motor *rightMotor, double wheelDiameter, double axleLength, double gearRatio, double odometryFrequency, double KpRegular, double KpArc, double Kd)
     {
         bt.open();
         wheelCircumference = wheelDiameter * MATH_PI;
         chassisRadius = axleLength / 2;
         this->axleLength = axleLength;
         this->gearRatio = gearRatio;
+        this->odometryPeriod = 1.0 / odometryFrequency;
         this->leftMotor = leftMotor;
         this->rightMotor = rightMotor;
 
@@ -177,6 +179,41 @@ namespace ev3ys
     {
         leftMotor->resetTachoCount();
         rightMotor->resetTachoCount();
+    }
+
+    void chassis::resetOdometry(pose initial) {
+        ps = initial;
+        r = sqrt(pow(ps.x, 2) + pow(ps.y, 2));
+        s = 0;
+        prevLeftDist = 0.0;
+        prevRightDist = 0.0;
+    }
+
+    void chassis::iterateOdometry() {
+        int currentLeftDist = tachoToCm(leftMotor->getTachoCount());
+        int currentRightDist = tachoToCm(rightMotor->getTachoCount());
+
+        double leftDistDiff =  currentLeftDist - prevLeftDist;
+        double rightDistDiff =  currentRightDist - prevRightDist;
+
+        double distDiff = (leftDistDiff + rightDistDiff) / 2.0;
+        double angleDiff = (rightDistDiff - leftDistDiff) / axleLength;
+
+        double dx = distDiff * cos(ps.theta + angleDiff/2.0);
+        double dy = distDiff * sin(ps.theta + angleDiff/2.0);
+        ps.x += dx;
+        ps.y += dy;
+        ps.theta += angleDiff;
+
+        r = sqrt(pow(ps.x, 2) + pow(ps.y, 2));
+        s += sqrt(pow(dx, 2) + pow(dy, 2));
+
+        prevLeftDist = currentLeftDist;
+        prevRightDist = currentRightDist;
+    }
+
+    pose chassis::getPose() {
+        return ps;
     }
 
     void chassis::stop(breakMode stopMode)
