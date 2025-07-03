@@ -104,6 +104,7 @@ namespace ev3ys
         void resetOdometry(pose initial = {0, 0, 0});
         void iterateOdometry();
         pose getPose();
+        double getDisplacement();
 
         void stop(breakMode stopMode = breakMode::COAST);
 

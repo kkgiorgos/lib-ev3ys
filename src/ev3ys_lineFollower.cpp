@@ -267,9 +267,9 @@ namespace ev3ys
         driveBase->tankUnlim(speedLeft, speedRight);
     }
 
-    void lineFollower::runPIDCustom(double speed, errorFunction calc)
+    void lineFollower::runPIDCustom(double speed, double error)
     {
-        double error = calc();
+        speed = driveBase->cmToTacho(speed);
         integral = (integral + error) / 2;
         double derivative = error - lastError;
         lastError = error;

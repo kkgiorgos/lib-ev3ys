@@ -216,6 +216,10 @@ namespace ev3ys
         return ps;
     }
 
+    double chassis::getDisplacement() {
+        return s;
+    }
+
     void chassis::stop(breakMode stopMode)
     {
         setMode(mode);

@@ -95,7 +95,7 @@ namespace ev3ys
 
         void stop(breakMode stopMode = breakMode::COAST);
 
-        void runPIDCustom(double speed, errorFunction calc);
+        void runPIDCustom(double speed, double error);
 
         //Velocity units: PCT -> UNREGULATED, DPS -> REGULATED, CMPS -> CONTROLLED
         //Distance units: CM
