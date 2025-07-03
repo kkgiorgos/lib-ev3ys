@@ -151,16 +151,16 @@ namespace ev3ys
 
     double chassis::getPosition()
     {
-        int leftTacho = leftMotor->getTachoCount();
-        int rightTacho = rightMotor->getTachoCount();
+        int leftTacho = (leftMotor->getTachoCount() - resetLeftTacho);
+        int rightTacho = (rightMotor->getTachoCount() - resetRightTacho);
 
         return calculateLinear(leftTacho, rightTacho);
     }
 
     double chassis::getAngle()
     {
-        int leftTacho = leftMotor->getTachoCount();
-        int rightTacho = rightMotor->getTachoCount();
+        int leftTacho = (leftMotor->getTachoCount() - resetLeftTacho);
+        int rightTacho = (rightMotor->getTachoCount() - resetRightTacho);
 
         return calculateAngular(leftTacho, rightTacho);
     }
@@ -177,8 +177,8 @@ namespace ev3ys
 
     void chassis::resetPosition()
     {
-        leftMotor->resetTachoCount();
-        rightMotor->resetTachoCount();
+        resetLeftTacho = leftMotor->getTachoCount();
+        resetRightTacho = rightMotor->getTachoCount();
     }
 
     void chassis::resetOdometry(pose initial) {
@@ -259,8 +259,8 @@ namespace ev3ys
     bool chassis::actuateControlledExternal(double time)
     {
         double leftTacho, rightTacho, leftVelocity, rightVelocity, distanceVelocity, headingVelocity;
-        leftTacho = leftMotor->getTachoCount();
-        rightTacho = rightMotor->getTachoCount();
+        leftTacho = (leftMotor->getTachoCount() - resetLeftTacho);
+        rightTacho = (rightMotor->getTachoCount() - resetRightTacho);
         leftVelocity = leftMotor->getCurrentSpeed();
         rightVelocity = rightMotor->getCurrentSpeed();
         distanceVelocity = distanceController.update(time, calculateLinear(leftTacho, rightTacho), calculateLinear(leftVelocity, rightVelocity));
@@ -273,7 +273,7 @@ namespace ev3ys
     void chassis::actuateControlled(double leftSpeed, double rightSpeed)
     {
         double error, result, leftResult, rightResult;
-        error = rightSpeed * leftMotor->getTachoCount() - leftSpeed * rightMotor->getTachoCount();
+        error = rightSpeed * (leftMotor->getTachoCount() - resetLeftTacho) - leftSpeed * (rightMotor->getTachoCount() - resetRightTacho); 
         result = error * Kp + (error - lastError) * Kd;
         leftResult = leftSpeed - sign(rightSpeed) * result;
         rightResult = rightSpeed + sign(leftSpeed) * result;
@@ -342,7 +342,7 @@ namespace ev3ys
 
         degrees = abs(degrees);
 
-        while((abs(leftMotor->getTachoCount()) + abs(rightMotor->getTachoCount())) / 2 < degrees)
+        while(abs(leftMotor->getTachoCount() - resetLeftTacho) + abs(rightMotor->getTachoCount() - resetRightTacho) / 2 < degrees)
         {
             actuateMotors(leftSpeed, rightSpeed);
         }

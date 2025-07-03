@@ -10,6 +10,8 @@
 
 namespace ev3ys
 {
+    typedef double (*errorFunction)();
+
     enum sensorModes
     {
         REFLECTED,
@@ -71,6 +73,10 @@ namespace ev3ys
         void resetChassisMode();
 
         void resetPID(double velocity);
+
+        double calculateError();
+        void runPID(double speed);
+
     public:
         lineFollower(int loopFrequency, chassis *driveBase, colorSensor *sensor);
         lineFollower(int loopFrequency, chassis *driveBase, colorSensor *leftSensor, colorSensor *rightSensor);
@@ -88,10 +94,8 @@ namespace ev3ys
         bool getLineDetected() {return lineDetected;}
 
         void stop(breakMode stopMode = breakMode::COAST);
-        double calculateError();
 
-        void runPID(double speed);
-
+        void runPIDCustom(double speed, errorFunction calc);
 
         //Velocity units: PCT -> UNREGULATED, DPS -> REGULATED, CMPS -> CONTROLLED
         //Distance units: CM

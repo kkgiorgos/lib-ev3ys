@@ -49,6 +49,8 @@ namespace ev3ys
         double linearAcceleration;
         double angularAcceleration;
 
+        int resetLeftTacho, resetRightTacho;
+
         double stallTime;
         int speedTolerancePCT;
         int speedToleranceDPS;

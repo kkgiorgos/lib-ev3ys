@@ -255,7 +255,21 @@ namespace ev3ys
     void lineFollower::runPID(double speed)
     {
         double error = calculateError();
-	//format(bt, "Error: %  \n\r\n\n\n\r")%error;
+        integral = (integral + error) / 2;
+        double derivative = error - lastError;
+        lastError = error;
+
+        double result = (kp * error + ki * integral + kd * derivative) * scaling; 
+
+        double speedLeft = speed + result;
+        double speedRight = speed - result;
+
+        driveBase->tankUnlim(speedLeft, speedRight);
+    }
+
+    void lineFollower::runPIDCustom(double speed, errorFunction calc)
+    {
+        double error = calc();
         integral = (integral + error) / 2;
         double derivative = error - lastError;
         lastError = error;
